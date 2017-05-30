@@ -1,0 +1,84 @@
+select (errors.num_error_requests::float / requests.num_of_total_requests::float) as err_percentage,
+        requests.year,
+        requests.month,
+        requests.day
+from
+    (select count(status) as num_of_total_requests,
+      extract(year from time) as year,
+      extract(month from time) as month,
+      extract(day from time) as day
+    from log
+    group by year, month, day 
+    order by year, month, day) as requests,
+    (select count(status) as num_error_requests,
+      extract(month from time) as month,
+      extract(day from time) as day,
+      extract(year from time) as year
+    from log
+    where status != '200 OK'
+    group by year, month, day
+    order by year, month, day) as errors
+where requests.year = errors.year and
+requests.month = errors.month and
+requests.day = errors.day
+limit 100;
+
+
+Table
+  articles
+
+            Column |           Type           |                       Modifiers                       
+      --------+--------------------------+-------------------------------------------------------
+      author | integer                  | not null
+      title  | text                     | not null
+      slug   | text                     | not null
+      lead   | text                     | 
+      body   | text                     | 
+      time   | timestamp with time zone | default now()
+      id     | integer                  | not null default nextval('articles_id_seq'::regclass)
+
+
+  authors
+
+            Column |  Type   |                      Modifiers                       
+        --------+---------+------------------------------------------------------
+        name   | text    | not null
+        bio    | text    | 
+        id     | integer | not null default nextval('authors_id_seq'::regclass)
+
+  log
+
+            Column |           Type           |                    Modifiers                     
+        --------+--------------------------+--------------------------------------------------
+        path   | text                     | 
+        ip     | inet                     | 
+        method | text                     | 
+        status | text                     | 
+        time   | timestamp with time zone | default now()
+        id     | integer                  | not null default nextval('log_id_seq'::regclass)
+
+
+select (errors.num_error_requests::float / requests.num_of_total_requests::float) as err_percentage,
+        requests.year,
+        requests.month,
+        requests.day
+from
+    (select count(status) as num_of_total_requests,
+      extract(year from time) as year,
+      extract(month from time) as month,
+      extract(day from time) as day
+    from log
+    group by year, month, day 
+    order by year, month, day) as requests,
+    (select count(status) as num_error_requests,
+      extract(month from time) as month,
+      extract(day from time) as day,
+      extract(year from time) as year
+    from log
+    where status != '200 OK'
+    group by year, month, day
+    order by year, month, day) as errors
+where requests.year = errors.year and
+requests.month = errors.month and
+requests.day = errors.day and
+(errors.num_error_requests::float / requests.num_of_total_requests::float) >= 0.01;
